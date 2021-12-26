@@ -1,4 +1,4 @@
-from urh.dev.native.lib.cusrp cimport *
+from urh.dev.native.lib.csoapysdr cimport *
 import numpy as np
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t

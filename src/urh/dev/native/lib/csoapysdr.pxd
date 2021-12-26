@@ -2,137 +2,208 @@ from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 from libcpp cimport bool
 
 cdef extern from "SoapySDR/Constants.h":
-    cdef SOAPY_SDR_TX "SOAPY_SDR_TX"
-    cdef SOAPY_SDR_RX "SOAPY_SDR_RX"
+    const int SOAPY_SDR_TX "SOAPY_SDR_TX"
+    const int SOAPY_SDR_RX "SOAPY_SDR_RX"
 
-#cdef extern from "lime/LimeSuite.h":
-#    ctypedef double float_type
-#    const int LMS_SUCCESS = 0
-#
-#    ctypedef void lms_device_t
-#    ctypedef char lms_info_str_t[256]
-#
-#    int LMS_GetDeviceList(lms_info_str_t *dev_list)
-#    int LMS_Open(lms_device_t ** device, lms_info_str_t info, void*args)
-#    int LMS_Close(lms_device_t *device)
-#
-#    const bool LMS_CH_TX = True
-#    const bool LMS_CH_RX = False
-#
-#    ctypedef struct lms_range_t:
-#        float_type min  # Minimum allowed value
-#        float_type max  # Minimum allowed value
-#        float_type step  # Minimum value step
-#
-#    ctypedef enum lms_testsig_t:
-#        LMS_TESTSIG_NONE = 0  # Disable test signals. Return to normal operation
-#        LMS_TESTSIG_NCODIV8  # Test signal from NCO half scale
-#        LMS_TESTSIG_NCODIV4  # Test signal from NCO half scale
-#        LMS_TESTSIG_NCODIV8F  # Test signal from NCO full scale
-#        LMS_TESTSIG_NCODIV4F  # Test signal from NCO full scale
-#        LMS_TESTSIG_DC  # DC test signal
-#
-#    int LMS_Init(lms_device_t *device)
-#    int LMS_Reset(lms_device_t *device)
-#    int LMS_Synchronize(lms_device_t *dev, bool to_chip)
-#    int LMS_GetNumChannels(lms_device_t *device, bool dir_tx)
-#    int LMS_EnableChannel(lms_device_t *device, bool dir_tx, size_t chan, bool enabled)
-#
-#    int LMS_SaveConfig(lms_device_t *device, const char *filename)
-#    int LMS_LoadConfig(lms_device_t *device, const char *filename)
-#
-#    int LMS_SetSampleRate(lms_device_t *device, float_type rate, size_t oversample)
-#    int LMS_GetSampleRate(lms_device_t *device, bool dir_tx, size_t chan, float_type *host_Hz, float_type *rf_Hz)
-#    int LMS_GetSampleRateRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
-#
-#    int LMS_SetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type frequency)
-#    int LMS_GetLOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *frequency)
-#    int LMS_GetLOFrequencyRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
-#
-#    int LMS_SetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan, float_type gain)
-#    int LMS_GetNormalizedGain(lms_device_t *device, bool dir_tx, size_t chan, float_type *gain)
-#
-#    int LMS_SetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type bandwidth)
-#    int LMS_GetLPFBW(lms_device_t *device, bool dir_tx, size_t chan, float_type *bandwidth)
-#    int LMS_GetLPFBWRange(lms_device_t *device, bool dir_tx, lms_range_t *range)
-#    int LMS_SetLPF(lms_device_t *device, bool dir_tx, size_t chan, bool enabled)
-#    int LMS_SetGFIRLPF(lms_device_t *device, bool dir_tx, size_t chan, bool enabled, float_type bandwidth)
-#
-#    int LMS_Calibrate(lms_device_t *device, bool dir_tx, size_t chan, double bw, unsigned flags)
-#
-#    int LMS_SetNCOFrequency(lms_device_t *device, bool dir_tx, size_t chan, const float_type *freq, float_type pho)
-#    int LMS_GetNCOFrequency(lms_device_t *device, bool dir_tx, size_t chan, float_type *freq, float_type *pho)
-#
-#    int LMS_GetClockFreq(lms_device_t *dev, size_t clk_id, float_type *freq)
-#    int LMS_SetClockFreq(lms_device_t *dev, size_t clk_id, float_type freq)
-#
-#    ctypedef char lms_name_t[16]
-#    int LMS_GetAntennaList(lms_device_t *device, bool dir_tx, size_t chan, lms_name_t *list)
-#    int LMS_SetAntenna(lms_device_t *device, bool dir_tx, size_t chan, size_t index)
-#    int LMS_GetAntenna(lms_device_t *device, bool dir_tx, size_t chan)
-#    int LMS_GetAntennaBW(lms_device_t *device, bool dir_tx, size_t chan, size_t index, lms_range_t *range)
-#
-#    int LMS_GetChipTemperature(lms_device_t *dev, size_t ind, float_type *temp)
-#
-#    ctypedef struct lms_stream_meta_t:
-#        # Timestamp is a value of HW counter with a tick based on sample rate.
-#        # In RX: time when the first sample in the returned buffer was received
-#        # In TX: time when the first sample in the submitted buffer should be send
-#        uint64_t timestamp
-#
-#        # In TX: wait for the specified HW timestamp before broadcasting data over the air
-#        # In RX: wait for the specified HW timestamp before starting to receive samples
-#        bool waitForTimestamp
-#
-#        # Indicates the end of send/receive transaction. Discards data remainder
-#        # in buffer (if there is any) in RX or flushes transfer buffer in TX (even
-#        # if the buffer is not full yet)
-#        bool flushPartialPacket
-#
-#    ctypedef enum dataFmt_t:
-#        LMS_FMT_F32 "lms_stream_t::LMS_FMT_F32" = 0
-#        LMS_FMT_I16 "lms_stream_t::LMS_FMT_I16"
-#        LMS_FMT_I12 "lms_stream_t::LMS_FMT_I12"
-#
-#    ctypedef struct lms_stream_t:
-#        # Stream handle. Should not be modified manually. Assigned by LMS_SetupStream()
-#        size_t handle
-#
-#        # Indicates whether stream is TX (true) or RX (false)
-#        bool isTx
-#
-#        # Channel number. Starts at 0.
-#        uint32_t channel
-#
-#        # FIFO size (in samples) used by stream.
-#        uint32_t fifoSize
-#
-#        # Parameter for controlling configuration bias toward low latency or high data throughput range [0,1.0].
-#        # 0 - lowest latency, usually results in lower throughput
-#        # 1 - higher throughput, usually results in higher latency
-#        float throughputVsLatency
-#
-#        dataFmt_t dataFmt
-#
-#    ctypedef struct lms_stream_status_t:
-#        bool active  # Indicates whether the stream is currently active
-#        uint32_t fifoFilledCount  # Number of samples in FIFO buffer
-#        uint32_t fifoSize  # Size of FIFO buffer
-#        uint32_t underrun  # FIFO underrun count
-#        uint32_t overrun  # FIFO overrun count
-#        uint32_t droppedPackets  # Number of dropped packets by HW
-#        float_type sampleRate  # Sampling rate of the stream
-#        float_type linkRate  # Combined data rate of all stream of the same direction (TX or RX)
-#        uint64_t timestamp  # Current HW timestamp
-#
-#    int LMS_SetupStream(lms_device_t *device, lms_stream_t *stream)
-#    int LMS_DestroyStream(lms_device_t *device, lms_stream_t *stream)
-#    int LMS_StartStream(lms_stream_t *stream)
-#    int LMS_StopStream(lms_stream_t *conf)
-#    int LMS_GetStreamStatus(lms_stream_t *stream, lms_stream_status_t*status)
-#    int LMS_RecvStream(lms_stream_t *stream, void *samples, size_t sample_count, lms_stream_meta_t *meta,
-#                       unsigned timeout_ms)
-#    int LMS_SendStream(lms_stream_t *stream, const void *samples, size_t sample_count, const lms_stream_meta_t *meta,
-#                       unsigned timeout_ms)
-#
-#    const char* LMS_GetLastErrorMessage()
+    const int SOAPY_SDR_END_BURST "SOAPY_SDR_END_BURST"
+    const int SOAPY_SDR_HAS_TIME "SOAPY_SDR_HAS_TIME"
+    const int SOAPY_SDR_END_ABRUPT "SOAPY_SDR_END_ABRUPT"
+    const int SOAPY_SDR_ONE_PACKET "SOAPY_SDR_ONE_PACKET"
+    const int SOAPY_SDR_MORE_FRAGMENTS "SOAPY_SDR_MORE_FRAGMENTS"
+    const int SOAPY_SDR_WAIT_TRIGGER "SOAPY_SDR_WAIT_TRIGGER"
+
+# TODO: remove unused functions
+cdef extern from "SoapySDR/Device.h":
+    struct SoapySDRDevice
+    struct SoapySDRStream
+
+    int SoapySDRDevice_lastStatus()
+    const char *SoapySDRDevice_lastError()
+    SoapySDRKwargs *SoapySDRDevice_enumerate(const SoapySDRKwargs *args, size_t *length)
+    SoapySDRKwargs *SoapySDRDevice_enumerateStrArgs(const char *args, size_t *length)
+    SoapySDRDevice *SoapySDRDevice_make(const SoapySDRKwargs *args)
+    SoapySDRDevice *SoapySDRDevice_makeStrArgs(const char *args)
+    int SoapySDRDevice_unmake(SoapySDRDevice *device)
+    char *SoapySDRDevice_getDriverKey(const SoapySDRDevice *device)
+    char *SoapySDRDevice_getHardwareKey(const SoapySDRDevice *device)
+    SoapySDRKwargs SoapySDRDevice_getHardwareInfo(const SoapySDRDevice *device)
+    int SoapySDRDevice_setFrontendMapping(SoapySDRDevice *device, const int direction, const char *mapping)
+    char *SoapySDRDevice_getFrontendMapping(const SoapySDRDevice *device, const int direction)
+    size_t SoapySDRDevice_getNumChannels(const SoapySDRDevice *device, const int direction)
+    SoapySDRKwargs SoapySDRDevice_getChannelInfo(const SoapySDRDevice *device, const int direction, const size_t channel)
+    bool SoapySDRDevice_getFullDuplex(const SoapySDRDevice *device, const int direction, const size_t channel)
+    char **SoapySDRDevice_getStreamFormats(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    char *SoapySDRDevice_getNativeStreamFormat(const SoapySDRDevice *device, const int direction, const size_t channel, double *fullScale)
+    SoapySDRArgInfo *SoapySDRDevice_getStreamArgsInfo(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    SoapySDRStream *SoapySDRDevice_setupStream(SoapySDRDevice *device,
+        const int direction,
+        const char *format,
+        const size_t *channels,
+        const size_t numChans,
+        const SoapySDRKwargs *args)
+    int SoapySDRDevice_closeStream(SoapySDRDevice *device, SoapySDRStream *stream)
+    size_t SoapySDRDevice_getStreamMTU(const SoapySDRDevice *device, SoapySDRStream *stream)
+    int SoapySDRDevice_activateStream(SoapySDRDevice *device,
+        SoapySDRStream *stream,
+        const int flags,
+        const long long timeNs,
+        const size_t numElems)
+    int SoapySDRDevice_deactivateStream(SoapySDRDevice *device,
+        SoapySDRStream *stream,
+        const int flags,
+        const long long timeNs)
+    int SoapySDRDevice_readStream(SoapySDRDevice *device,
+        SoapySDRStream *stream,
+        void * const *buffs,
+        const size_t numElems,
+        int *flags,
+        long long *timeNs,
+        const long timeoutUs)
+    int SoapySDRDevice_writeStream(SoapySDRDevice *device,
+        SoapySDRStream *stream,
+        const void * const *buffs,
+        const size_t numElems,
+        int *flags,
+        const long long timeNs,
+        const long timeoutUs)
+    int SoapySDRDevice_readStreamStatus(SoapySDRDevice *device,
+        SoapySDRStream *stream,
+        size_t *chanMask,
+        int *flags,
+        long long *timeNs,
+        const long timeoutUs)
+    char **SoapySDRDevice_listAntennas(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    int SoapySDRDevice_setAntenna(SoapySDRDevice *device, const int direction, const size_t channel, const char *name)
+    char *SoapySDRDevice_getAntenna(const SoapySDRDevice *device, const int direction, const size_t channel)
+    bool SoapySDRDevice_hasDCOffsetMode(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setDCOffsetMode(SoapySDRDevice *device, const int direction, const size_t channel, const bool automatic)
+    bool SoapySDRDevice_getDCOffsetMode(const SoapySDRDevice *device, const int direction, const size_t channel)
+    bool SoapySDRDevice_hasDCOffset(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setDCOffset(SoapySDRDevice *device, const int direction, const size_t channel, const double offsetI, const double offsetQ)
+    int SoapySDRDevice_getDCOffset(const SoapySDRDevice *device, const int direction, const size_t channel, double *offsetI, double *offsetQ)
+    bool SoapySDRDevice_hasIQBalance(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setIQBalance(SoapySDRDevice *device, const int direction, const size_t channel, const double balanceI, const double balanceQ)
+    int SoapySDRDevice_getIQBalance(const SoapySDRDevice *device, const int direction, const size_t channel, double *balanceI, double *balanceQ)
+    bool SoapySDRDevice_hasIQBalanceMode(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setIQBalanceMode(SoapySDRDevice *device, const int direction, const size_t channel, const bool automatic)
+    bool SoapySDRDevice_getIQBalanceMode(const SoapySDRDevice *device, const int direction, const size_t channel)
+    bool SoapySDRDevice_hasFrequencyCorrection(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setFrequencyCorrection(SoapySDRDevice *device, const int direction, const size_t channel, const double value)
+    double SoapySDRDevice_getFrequencyCorrection(const SoapySDRDevice *device, const int direction, const size_t channel)
+    char **SoapySDRDevice_listGains(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    bool SoapySDRDevice_hasGainMode(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setGainMode(SoapySDRDevice *device, const int direction, const size_t channel, const bool automatic)
+    bool SoapySDRDevice_getGainMode(const SoapySDRDevice *device, const int direction, const size_t channel)
+    int SoapySDRDevice_setGain(SoapySDRDevice *device, const int direction, const size_t channel, const double value)
+    int SoapySDRDevice_setGainElement(SoapySDRDevice *device, const int direction, const size_t channel, const char *name, const double value)
+    double SoapySDRDevice_getGain(const SoapySDRDevice *device, const int direction, const size_t channel)
+    double SoapySDRDevice_getGainElement(const SoapySDRDevice *device, const int direction, const size_t channel, const char *name)
+    SoapySDRRange SoapySDRDevice_getGainRange(const SoapySDRDevice *device, const int direction, const size_t channel)
+    SoapySDRRange SoapySDRDevice_getGainElementRange(const SoapySDRDevice *device, const int direction, const size_t channel, const char *name)
+    int SoapySDRDevice_setFrequency(SoapySDRDevice *device, const int direction, const size_t channel, const double frequency, const SoapySDRKwargs *args)
+    int SoapySDRDevice_setFrequencyComponent(SoapySDRDevice *device, const int direction, const size_t channel, const char *name, const double frequency, const SoapySDRKwargs *args)
+    double SoapySDRDevice_getFrequency(const SoapySDRDevice *device, const int direction, const size_t channel)
+    double SoapySDRDevice_getFrequencyComponent(const SoapySDRDevice *device, const int direction, const size_t channel, const char *name)
+    char **SoapySDRDevice_listFrequencies(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    SoapySDRRange *SoapySDRDevice_getFrequencyRange(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    SoapySDRRange *SoapySDRDevice_getFrequencyRangeComponent(const SoapySDRDevice *device, const int direction, const size_t channel, const char *name, size_t *length)
+    SoapySDRArgInfo *SoapySDRDevice_getFrequencyArgsInfo(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    int SoapySDRDevice_setSampleRate(SoapySDRDevice *device, const int direction, const size_t channel, const double rate)
+    double SoapySDRDevice_getSampleRate(const SoapySDRDevice *device, const int direction, const size_t channel)
+    double *SoapySDRDevice_listSampleRates(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    SoapySDRRange *SoapySDRDevice_getSampleRateRange(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    int SoapySDRDevice_setBandwidth(SoapySDRDevice *device, const int direction, const size_t channel, const double bw)
+    double SoapySDRDevice_getBandwidth(const SoapySDRDevice *device, const int direction, const size_t channel)
+    double *SoapySDRDevice_listBandwidths(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    SoapySDRRange *SoapySDRDevice_getBandwidthRange(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    int SoapySDRDevice_setMasterClockRate(SoapySDRDevice *device, const double rate)
+    double SoapySDRDevice_getMasterClockRate(const SoapySDRDevice *device)
+    SoapySDRRange *SoapySDRDevice_getMasterClockRates(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_setReferenceClockRate(SoapySDRDevice *device, const double rate)
+    double SoapySDRDevice_getReferenceClockRate(const SoapySDRDevice *device)
+    SoapySDRRange *SoapySDRDevice_getReferenceClockRates(const SoapySDRDevice *device, size_t *length)
+    char **SoapySDRDevice_listClockSources(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_setClockSource(SoapySDRDevice *device, const char *source)
+    char *SoapySDRDevice_getClockSource(const SoapySDRDevice *device)
+    char **SoapySDRDevice_listTimeSources(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_setTimeSource(SoapySDRDevice *device, const char *source)
+    char *SoapySDRDevice_getTimeSource(const SoapySDRDevice *device)
+    bool SoapySDRDevice_hasHardwareTime(const SoapySDRDevice *device, const char *what)
+    long long SoapySDRDevice_getHardwareTime(const SoapySDRDevice *device, const char *what)
+    int SoapySDRDevice_setHardwareTime(SoapySDRDevice *device, const long long timeNs, const char *what)
+    int SoapySDRDevice_setCommandTime(SoapySDRDevice *device, const long long timeNs, const char *what)
+    char **SoapySDRDevice_listSensors(const SoapySDRDevice *device, size_t *length)
+    SoapySDRArgInfo SoapySDRDevice_getSensorInfo(const SoapySDRDevice *device, const char *key)
+    char *SoapySDRDevice_readSensor(const SoapySDRDevice *device, const char *key)
+    char **SoapySDRDevice_listChannelSensors(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    SoapySDRArgInfo SoapySDRDevice_getChannelSensorInfo(const SoapySDRDevice *device, const int direction, const size_t channel, const char *key)
+    char *SoapySDRDevice_readChannelSensor(const SoapySDRDevice *device, const int direction, const size_t channel, const char *key)
+    char **SoapySDRDevice_listRegisterInterfaces(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_writeRegister(SoapySDRDevice *device, const char *name, const unsigned addr, const unsigned value)
+    unsigned SoapySDRDevice_readRegister(const SoapySDRDevice *device, const char *name, const unsigned addr)
+    int SoapySDRDevice_writeRegisters(SoapySDRDevice *device, const char *name, const unsigned addr, const unsigned *value, const size_t length)
+    unsigned *SoapySDRDevice_readRegisters(const SoapySDRDevice *device, const char *name, const unsigned addr, size_t *length)
+    SoapySDRArgInfo *SoapySDRDevice_getSettingInfo(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_writeSetting(SoapySDRDevice *device, const char *key, const char *value)
+    char *SoapySDRDevice_readSetting(const SoapySDRDevice *device, const char *key)
+    SoapySDRArgInfo *SoapySDRDevice_getChannelSettingInfo(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length)
+    int SoapySDRDevice_writeChannelSetting(SoapySDRDevice *device, const int direction, const size_t channel, const char *key, const char *value)
+    char *SoapySDRDevice_readChannelSetting(const SoapySDRDevice *device, const int direction, const size_t channel, const char *key)
+    char **SoapySDRDevice_listGPIOBanks(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_writeGPIO(SoapySDRDevice *device, const char *bank, const unsigned value)
+    int SoapySDRDevice_writeGPIOMasked(SoapySDRDevice *device, const char *bank, const unsigned value, const unsigned mask)
+    unsigned SoapySDRDevice_readGPIO(const SoapySDRDevice *device, const char *bank)
+    int SoapySDRDevice_writeGPIODir(SoapySDRDevice *device, const char *bank, const unsigned dir)
+    int SoapySDRDevice_writeGPIODirMasked(SoapySDRDevice *device, const char *bank, const unsigned dir, const unsigned mask)
+    unsigned SoapySDRDevice_readGPIODir(const SoapySDRDevice *device, const char *bank)
+    int SoapySDRDevice_writeI2C(SoapySDRDevice *device, const int addr, const char *data, const size_t numBytes)
+    char *SoapySDRDevice_readI2C(SoapySDRDevice *device, const int addr, size_t *numBytes)
+    unsigned SoapySDRDevice_transactSPI(SoapySDRDevice *device, const int addr, const unsigned data, const size_t numBits)
+    char **SoapySDRDevice_listUARTs(const SoapySDRDevice *device, size_t *length)
+    int SoapySDRDevice_writeUART(SoapySDRDevice *device, const char *which, const char *data)
+    char *SoapySDRDevice_readUART(const SoapySDRDevice *device, const char *which, const long timeoutUs)
+
+cdef extern from "SoapySDR/Formats.h":
+    size_t SoapySDR_formatToSize(const char *format)
+
+cdef extern from "SoapySDR/Types.h":
+    size_t SoapySDR_formatToSize(const char *format)
+
+    ctypedef struct SoapySDRRange:
+        double minimum
+        double maximum
+        double step
+
+    ctypedef struct SoapySDRKwargs:
+        size_t size
+        char **keys
+        char **vals
+
+    SoapySDRKwargs SoapySDRKwargs_fromString(const char *markup)
+    char *SoapySDRKwargs_toString(const SoapySDRKwargs *args)
+
+    ctypedef enum SoapySDRArgInfoType:
+        SOAPY_SDR_ARG_INFO_BOOL
+        SOAPY_SDR_ARG_INFO_INT
+        SOAPY_SDR_ARG_INFO_FLOAT
+        SOAPY_SDR_ARG_INFO_STRING
+
+    ctypedef struct SoapySDRArgInfo:
+        char *value
+        char *name
+        char *description
+        char *units
+        SoapySDRArgInfoType type
+        SoapySDRRange range
+        size_t numOptions
+        char **options
+        char **optionNames
+
+    void SoapySDR_free(void *ptr)
+    void SoapySDRStrings_clear(char ***elems, const size_t length)
+    int SoapySDRKwargs_set(SoapySDRKwargs *args, const char *key, const char *val)
+    const char *SoapySDRKwargs_get(const SoapySDRKwargs *args, const char *key)
+    void SoapySDRKwargs_clear(SoapySDRKwargs *args)
+    void SoapySDRKwargsList_clear(SoapySDRKwargs *args, const size_t length)
+    void SoapySDRArgInfo_clear(SoapySDRArgInfo *info)
+    void SoapySDRArgInfoList_clear(SoapySDRArgInfo *info, const size_t length)
