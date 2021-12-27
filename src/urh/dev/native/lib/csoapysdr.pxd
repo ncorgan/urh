@@ -163,12 +163,13 @@ cdef extern from "SoapySDR/Device.h":
     int SoapySDRDevice_writeUART(SoapySDRDevice *device, const char *which, const char *data)
     char *SoapySDRDevice_readUART(const SoapySDRDevice *device, const char *which, const long timeoutUs)
 
+cdef extern from "SoapySDR/Errors.h":
+    const char *SoapySDR_errToStr(const int errorCode)
+
 cdef extern from "SoapySDR/Formats.h":
     size_t SoapySDR_formatToSize(const char *format)
 
 cdef extern from "SoapySDR/Types.h":
-    size_t SoapySDR_formatToSize(const char *format)
-
     ctypedef struct SoapySDRRange:
         double minimum
         double maximum
