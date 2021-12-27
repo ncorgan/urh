@@ -1,6 +1,8 @@
 # TODO: consistency in whether to throw here or in Python layer
 
 from urh.dev.native.lib.csoapysdr cimport *
+from urh.util.Logger import logger
+
 import numpy as np
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
@@ -196,3 +198,26 @@ cpdef int close_stream():
     _c_stream = NULL
 
     return ret
+
+#
+# Logging
+#
+
+cdef void __urh_soapy_log_handler(const SoapySDRLogLevel log_level, const char *message):
+    py_message = message.encode("utf-8")
+
+    if log_level >= SOAPY_SDR_DEBUG:
+        logger.debug(py_message)
+    elif log_level >= SOAPY_SDR_NOTICE:
+        logger.info(py_message)
+    elif log_level >= SOAPY_SDR_WARNING:
+        logger.warning(py_message)
+    elif log_level >= SOAPY_SDR_ERROR:
+        logger.error(py_message)
+    else:
+        logger.critical(py_message)
+
+cpdef __init_soapysdr_logging():
+    # Forward everything to URH and let its logger deal with it.
+    SoapySDR_setLogLevel(SOAPY_SDR_SSI)
+    SoapySDR_registerLogHandler(&__urh_soapy_log_handler)

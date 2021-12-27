@@ -169,6 +169,24 @@ cdef extern from "SoapySDR/Errors.h":
 cdef extern from "SoapySDR/Formats.h":
     size_t SoapySDR_formatToSize(const char *format)
 
+cdef extern from "SoapySDR/Logger.h":
+    ctypedef enum SoapySDRLogLevel:
+        SOAPY_SDR_FATAL = 1
+        SOAPY_SDR_CRITICAL
+        SOAPY_SDR_ERROR
+        SOAPY_SDR_WARNING
+        SOAPY_SDR_NOTICE
+        SOAPY_SDR_INFO
+        SOAPY_SDR_DEBUG
+        SOAPY_SDR_TRACE
+        SOAPY_SDR_SSI
+
+    ctypedef void (*SoapySDRLogHandler)(const SoapySDRLogLevel logLevel, const char *message);
+
+    void SoapySDR_log(const SoapySDRLogLevel logLevel, const char *message)
+    void SoapySDR_registerLogHandler(const SoapySDRLogHandler handler)
+    void SoapySDR_setLogLevel(const SoapySDRLogLevel logLevel)
+
 cdef extern from "SoapySDR/Types.h":
     ctypedef struct SoapySDRRange:
         double minimum
