@@ -204,7 +204,7 @@ cpdef int close_stream():
 #
 
 cdef void __urh_soapy_log_handler(const SoapySDRLogLevel log_level, const char *message):
-    py_message = message.encode("utf-8")
+    py_message = "SoapySDR: "+message.encode("utf-8")
 
     if log_level >= SOAPY_SDR_DEBUG:
         logger.debug(py_message)
