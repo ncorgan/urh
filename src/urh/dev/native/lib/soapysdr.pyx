@@ -95,6 +95,9 @@ cpdef str get_device_repr():
 #
 
 cpdef set_tx(bool is_tx):
+    if _c_stream:
+        raise RuntimeError("Cannot set TX/RX once the stream is active")
+
     global DIRECTION
     DIRECTION = SOAPY_SDR_TX if is_tx else SOAPY_SDR_RX
 
@@ -190,6 +193,78 @@ cpdef int deactivate_stream():
         _c_stream,
         0,
         0)
+
+cpdef int recv_stream(connection, size_t num_samples):
+    cdef float* result = <float*>(num_samples * 2 * sizeof(float))
+    if not result:
+        raise MemoryError()
+
+    cdef size_t current_index = 0
+    cdef int flags = 0
+    cdef long long timeNs = 0
+    cdef long timeoutUs = 100000
+
+    cdef float* buff = NULL
+    cdef float** buffs = &buff
+
+    try:
+        while current_index < (num_samples*2):
+            flags = 0
+            timeNs = 0
+
+            buff = &result[current_index]
+
+            read_length = min(num_samples, MTU)
+            ret = SoapySDRDevice_readStream(
+                _c_device,
+                _c_stream,
+                <void**>buffs,
+                read_length,
+                &flags,
+                &timeNs,
+                timeoutUs)
+            if ret >= 0:
+                current_index += (ret*2)
+            else:
+                return ret
+
+        connection.send_bytes(<float[:2*num_samples]>result)
+        return 0
+    finally:
+        free(result)
+
+@cython.boundscheck(False)
+@cython.initializedcheck(False)
+@cython.wraparound(False)
+cpdef int send_stream(float[::1] samples):
+    cdef float* buff = NULL
+    cdef float** buffs = &buff
+
+    cdef size_t current_index = 0
+    cdef int flags = 0
+    cdef long long timeNs = 0
+    cdef long timeoutUs = 100000
+
+    ret = 0
+
+    while current_index < (len(samples) * 2):
+        buff = &samples[current_index]
+
+        write_length = min(MTU, (len(samples) - (current_index/2)))
+        ret = SoapySDRDevice_writeStream(
+            _c_device,
+            _c_stream,
+            <const void**>buffs,
+            write_length,
+            &flags,
+            timeNs,
+            timeoutUs)
+        if ret >= 0:
+            current_index += (ret*2)
+        else:
+            break
+
+    return ret
 
 cpdef int close_stream():
     global _c_stream
