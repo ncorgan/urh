@@ -23,7 +23,7 @@ class SoapySDR(Device):
 
     @classmethod
     def get_device_list(cls):
-        return soapysdr.find_devices("")
+        return soapysdr.find_devices()
 
     @classmethod
     def adapt_num_read_samples_to_sample_rate(cls, sample_rate):
@@ -31,16 +31,16 @@ class SoapySDR(Device):
 
     @classmethod
     def setup_device(cls, ctrl_connection: Connection, device_identifier):
-        ret = soapysdr.open(device_identifier)
+        ret = soapysdr.make(device_identifier)
 
         if device_identifier:
-            ctrl_connection.send("OPEN ({}):{}".format(device_identifier, ret))
+            ctrl_connection.send("MAKE ({}):{}".format(device_identifier, ret))
         else:
-            ctrl_connection.send("OPEN:" + str(ret))
+            ctrl_connection.send("MAKE:" + str(ret))
 
         success = ret == 0
         if success:
-            device_repr = soapysdr.get_device_representation()
+            device_repr = soapysdr.get_device_repr()
             ctrl_connection.send(device_repr)
         else:
             ctrl_connection.send(soapysdr.get_last_error())
@@ -112,7 +112,7 @@ class SoapySDR(Device):
             (self.Command.SET_SAMPLE_RATE.name, self.sample_rate),
             (self.Command.SET_BANDWIDTH.name, self.bandwidth),
             (self.Command.SET_RF_GAIN.name, self.gain * 0.01),
-            ("identifier", self.device_serial),
+            ("identifier", soapysdr.get_device_repr()),
         ])
 
     @staticmethod
