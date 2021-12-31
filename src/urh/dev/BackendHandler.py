@@ -82,7 +82,8 @@ class BackendHandler(object):
 
     """
     DEVICE_NAMES = ("AirSpy R2", "AirSpy Mini", "BladeRF", "FUNcube", "HackRF",
-                    "LimeSDR", "PlutoSDR", "RTL-SDR", "RTL-TCP", "SDRPlay", "SoundCard", "USRP")
+                    "LimeSDR", "PlutoSDR", "RTL-SDR", "RTL-TCP", "SDRPlay", "SoundCard", "USRP",
+                    "SoapySDR")
 
     def __init__(self):
 
@@ -204,6 +205,28 @@ class BackendHandler(object):
         except ImportError:
             return False
 
+    @property
+    def __soapysdr_native_enabled(self) -> bool:
+        old_stdout = devnull = None
+        try:
+            try:
+                # Redirect stderr to /dev/null to hide default SoapySDR logger
+                devnull = open(os.devnull, 'w')
+                old_stdout = os.dup(sys.stdout.fileno())
+                os.dup2(devnull.fileno(), sys.stdout.fileno())
+            except:
+                pass
+
+            from urh.dev.native.lib import soapysdr
+            return True
+        except ImportError:
+            return False
+        finally:
+            if old_stdout is not None:
+                os.dup2(old_stdout, sys.stdout.fileno())
+            if devnull is not None:
+                devnull.close()
+
     def __check_gr_python_interpreter(self, interpreter):
         # Use shell=True to prevent console window popping up on windows
         return call('"{0}" -c "import gnuradio"'.format(interpreter), shell=True, stderr=DEVNULL) == 0
@@ -283,6 +306,10 @@ class BackendHandler(object):
             backends.add(Backends.native)
 
         if devname.lower() == "soundcard" and self.__soundcard_enabled:
+            supports_rx, supports_tx = True, True
+            backends.add(Backends.native)
+
+        if devname.lower() == "soapysdr" and self.__soapysdr_native_enabled:
             supports_rx, supports_tx = True, True
             backends.add(Backends.native)
 

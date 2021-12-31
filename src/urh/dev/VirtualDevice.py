@@ -129,6 +129,10 @@ class VirtualDevice(QObject):
                     from urh.dev.native.SoundCard import SoundCard
                     self.__dev = SoundCard(sample_rate=sample_rate,
                                            resume_on_full_receive_buffer=resume_on_full_receive_buffer)
+                elif name.startswith("soapysdr"):
+                    from urh.dev.native.SoapySDR import SoapySDR
+                    self.__dev = SoapySDR(center_freq=freq, sample_rate=sample_rate, bandwidth=bandwidth, gain=gain,
+                                          resume_on_full_receive_buffer=resume_on_full_receive_buffer)
                 else:
                     raise NotImplementedError("Native Backend for {0} not yet implemented".format(name))
 
