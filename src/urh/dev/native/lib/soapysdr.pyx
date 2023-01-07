@@ -314,7 +314,7 @@ cdef void __urh_soapy_log_handler(const SoapySDRLogLevel log_level, const char *
     else:
         logger.critical(py_message)
 
-cpdef __init_soapysdr_logging():
+cpdef void init_logging():
     # Forward everything to URH and let its logger deal with it.
     SoapySDR_setLogLevel(SOAPY_SDR_SSI)
     SoapySDR_registerLogHandler(&__urh_soapy_log_handler)

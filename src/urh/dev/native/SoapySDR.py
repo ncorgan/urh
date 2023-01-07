@@ -90,6 +90,9 @@ class SoapySDR(Device):
         super().__init__(center_freq=center_freq, sample_rate=sample_rate, bandwidth=bandwidth,
                          gain=gain, if_gain=if_gain, baseband_gain=baseband_gain,
                          resume_on_full_receive_buffer=resume_on_full_receive_buffer)
+
+        soapysdr.init_logging()
+
         self.success = 0
 
         self.error_codes = {4711: "Antenna index not supported on this device"}
