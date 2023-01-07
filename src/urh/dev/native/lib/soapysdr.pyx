@@ -1,4 +1,5 @@
 # TODO: consistency in whether to throw here or in Python layer
+# TODO: make returns make sense
 
 from urh.dev.native.lib.csoapysdr cimport *
 from urh.util.Logger import logger
@@ -195,81 +196,102 @@ cpdef int deactivate_stream():
         0)
 
 cpdef int recv_stream(connection, size_t num_samples):
-    cdef float* result = <float*>(num_samples * 2 * sizeof(float))
+    cdef float* result = <float *>(num_samples * 2 * sizeof(float))
     if not result:
         raise MemoryError()
 
+    cdef int read_ret = 0
     cdef size_t current_index = 0
     cdef int flags = 0
-    cdef long long timeNs = 0
-    cdef long timeoutUs = 100000
+    cdef long long time_ns = 0
+    cdef long timeout_us = 100000
 
-    cdef float* buff = NULL
-    cdef float** buffs = &buff
+    # This is based on the USRP implementation. Do either need the intermediate buffer?
+    cdef float* buff = <float *>malloc(MTU * 2 * sizeof(float))
+    cdef void** buffs = <void **>&buff
 
     try:
         while current_index < (num_samples*2):
             flags = 0
-            timeNs = 0
-
-            buff = &result[current_index]
+            time_ns = 0
 
             read_length = min(num_samples, MTU)
-            ret = SoapySDRDevice_readStream(
+            read_ret = SoapySDRDevice_readStream(
                 _c_device,
                 _c_stream,
                 <void**>buffs,
                 read_length,
                 &flags,
-                &timeNs,
-                timeoutUs)
-            if ret >= 0:
-                current_index += (ret*2)
+                &time_ns,
+                timeout_us)
+            check_device_call("recv_stream")
+
+            if read_ret >= 0:
+                memcpy(&result[current_index], &buff[0], 2 * read_ret * sizeof(float))
+                current_index += (read_ret * 2)
             else:
-                return ret
+                # Error code
+                return read_ret
 
         connection.send_bytes(<float[:2*num_samples]>result)
         return 0
     finally:
+        free(buff)
         free(result)
 
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
 @cython.wraparound(False)
 cpdef int send_stream(float[::1] samples):
-    cdef float* buff = NULL
-    cdef float** buffs = &buff
+    if len(samples) == 1 and samples[0] == 0:
+        # Fill with zeros. Use some more zeros to prevent underflows
+        samples = np.zeros(8 * MTU, dtype=np.float32)
 
-    cdef size_t current_index = 0
+    cdef unsigned long i, index = 0
+    cdef soapy_ret = 0
+    cdef size_t sample_count = len(samples)
+
     cdef int flags = 0
-    cdef long long timeNs = 0
-    cdef long timeoutUs = 100000
+    cdef long long time_ns = 0
+    cdef long timeout_us = 100000
 
-    ret = 0
+    cdef float* buff = <float *>malloc(MTU * 2 * sizeof(float))
+    if not buff:
+        raise MemoryError()
 
-    while current_index < (len(samples) * 2):
-        buff = &samples[current_index]
+    cdef const void ** buffs = <const void **> &buff
 
-        write_length = min(MTU, (len(samples) - (current_index/2)))
-        ret = SoapySDRDevice_writeStream(
-            _c_device,
-            _c_stream,
-            <const void**>buffs,
-            write_length,
-            &flags,
-            timeNs,
-            timeoutUs)
-        if ret >= 0:
-            current_index += (ret*2)
-        else:
-            break
+    try:
+        for i in range(0, sample_count):
+            buff[index] = samples[i]
+            index += 1
+            if index >= (2 * MTU):
+                index = 0
+                if i == (sample_count - 1):
+                    flags = SOAPY_SDR_END_BURST
 
-    return ret
+                soapy_ret = SoapySDRDevice_writeStream(
+                    _c_device,
+                    _c_stream,
+                    buffs,
+                    MTU,
+                    &flags,
+                    time_ns,
+                    timeout_us);
+                check_device_call("send_stream")
+
+                if soapy_ret < 0:
+                    return soapy_ret
+
+        return 0
+    finally:
+        free(buff)
 
 cpdef int close_stream():
     global _c_stream
 
     ret = SoapySDRDevice_closeStream(_c_device, _c_stream)
+    check_device_call("close_stream")
     _c_stream = NULL
 
     return ret
